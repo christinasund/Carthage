@@ -7,6 +7,17 @@ import Tentacle
 import XCDBLD
 import ReactiveTask
 
+let dsp = {
+
+return DispatchQueue.init(label: "serial.unzip.queue")
+
+	// return DispatchQueue.init(label: "serial.unzip.queue"
+	// 	, qos: .default
+	// 	, attributes: .concurrent
+	// 	, autoreleaseFrequency: .inherit
+	// 	, target: nil)
+}()
+
 /// Describes an event occurring to or with a project.
 public enum ProjectEvent {
 	/// The project is beginning to clone.
@@ -668,6 +679,7 @@ public final class Project { // swiftlint:disable:this type_body_length
 
 		return SignalProducer<URL, CarthageError>(value: zipFile)
 			.flatMap(.concat, unarchive(archive:))
+			.observe(on: QueueScheduler.init(qos: .default, name: "issue-2777", targeting: dsp))
 			.flatMap(.concat) { directoryURL -> SignalProducer<URL, CarthageError> in
 				// For all frameworks in the directory where the archive has been expanded
 				return frameworksInDirectory(directoryURL)
